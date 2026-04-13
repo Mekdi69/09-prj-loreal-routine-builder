@@ -37,9 +37,13 @@ productsContainer.innerHTML = `
 
 /* Load product data from JSON file */
 async function loadProducts() {
-  const response = await fetch("products.jason?v=3");
-  const data = await response.json();
-  return data.products;
+  return fetch(`./products.json?v=${Date.now()}`)
+    .then((res) => res.json())
+    .then((data) => {
+      console.log(data.products); // Log the products to verify they are loaded correctly
+      displayProducts(data.products); // Display products after loading
+      return data.products;
+    });
 }
 
 /* Filter products by search term using name and keyword fields */
