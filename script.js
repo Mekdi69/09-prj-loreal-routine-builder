@@ -37,7 +37,7 @@ productsContainer.innerHTML = `
 
 /* Load product data from JSON file */
 async function loadProducts() {
-  const response = await fetch("products.jason?v=3");
+  const response = await fetch("products-data.jason?v=3");
   const data = await response.json();
   return data.products;
 }
