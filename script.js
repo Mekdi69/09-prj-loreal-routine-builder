@@ -192,6 +192,8 @@ function closeProductDetails() {
 }
 
 /* Return Cloudflare Worker endpoint (same-origin by default) */
+const CLOUDFLARE_WORKER_URL = "https://lorroutine.mekdimbekele.workers.dev";
+
 function getWorkerEndpoint() {
   if (typeof CLOUDFLARE_WORKER_URL !== "undefined") {
     return CLOUDFLARE_WORKER_URL;
