@@ -10,12 +10,13 @@ const generateRoutineBtn = document.getElementById("generateRoutine");
 const clearSelectionsBtn = document.getElementById("clearSelections");
 const userInput = document.getElementById("userInput");
 const productDetailsModal = document.getElementById("productDetailsModal");
+const productDetailsImage = document.getElementById("productDetailsImage");
 const productDetailsTitle = document.getElementById("productDetailsTitle");
+const productDetailsMeta = document.getElementById("productDetailsMeta");
 const productDetailsDescription = document.getElementById(
   "productDetailsDescription",
 );
 const closeProductDetailsBtn = document.getElementById("closeProductDetails");
-const PRODUCT_DETAILS_PLACEHOLDER_TEXT = "No product selected yet.";
 
 /* Keep track of products currently visible and selected */
 const selectedProducts = [];
@@ -183,8 +184,24 @@ function clearSelections() {
 
 /* Open modal with the selected product description */
 function openProductDetails(product) {
+  if (!product || typeof product !== "object") {
+    return;
+  }
+
+  if (
+    !product.name ||
+    !product.brand ||
+    !product.category ||
+    !product.description
+  ) {
+    return;
+  }
+
   lastFocusedElement = document.activeElement;
-  productDetailsTitle.textContent = `${product.brand} - ${product.name}`;
+  productDetailsImage.src = product.image || "";
+  productDetailsImage.alt = `${product.name} product image`;
+  productDetailsTitle.textContent = product.name;
+  productDetailsMeta.textContent = `${product.brand} | ${product.category}`;
   productDetailsDescription.textContent = product.description;
   productDetailsModal.hidden = false;
   closeProductDetailsBtn.focus();
@@ -193,8 +210,11 @@ function openProductDetails(product) {
 /* Close modal and return focus to where user was */
 function closeProductDetails() {
   productDetailsModal.hidden = true;
-  productDetailsTitle.textContent = "Product Details";
-  productDetailsDescription.textContent = PRODUCT_DETAILS_PLACEHOLDER_TEXT;
+  productDetailsImage.src = "";
+  productDetailsImage.alt = "";
+  productDetailsTitle.textContent = "";
+  productDetailsMeta.textContent = "";
+  productDetailsDescription.textContent = "";
 
   if (lastFocusedElement) {
     lastFocusedElement.focus();
