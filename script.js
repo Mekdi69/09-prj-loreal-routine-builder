@@ -1,4 +1,5 @@
 /* Get references to DOM elements */
+const CLOUDFLARE_WORKER_URL = "https://lorroutine.mekdimbekele.workers.dev";
 const categoryFilter = document.getElementById("categoryFilter");
 const productSearch = document.getElementById("productSearch");
 const productsContainer = document.getElementById("productsContainer");
@@ -192,8 +193,6 @@ function closeProductDetails() {
 }
 
 /* Return Cloudflare Worker endpoint (same-origin by default) */
-const CLOUDFLARE_WORKER_URL = "https://lorroutine.mekdimbekele.workers.dev";
-
 function getWorkerEndpoint() {
   if (typeof CLOUDFLARE_WORKER_URL !== "undefined") {
     return CLOUDFLARE_WORKER_URL;
