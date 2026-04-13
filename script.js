@@ -15,6 +15,7 @@ const productDetailsDescription = document.getElementById(
   "productDetailsDescription",
 );
 const closeProductDetailsBtn = document.getElementById("closeProductDetails");
+const PRODUCT_DETAILS_PLACEHOLDER_TEXT = "No product selected yet.";
 
 /* Keep track of products currently visible and selected */
 const selectedProducts = [];
@@ -24,6 +25,8 @@ let selectedCategory = "";
 let conversationMessages = [];
 const SELECTED_PRODUCTS_STORAGE_KEY = "lorealSelectedProducts";
 let lastFocusedElement = null;
+const MORNING_STEP_ORDER = ["Cleanser", "Treatment", "Moisturizer", "SPF"];
+const EVENING_STEP_ORDER = ["Cleanser", "Treatment", "Moisturizer"];
 
 /* Show initial placeholder until user selects a category */
 productsContainer.innerHTML = `
@@ -96,7 +99,7 @@ function updateVisibleProducts() {
 function renderSelectedProducts() {
   if (selectedProducts.length === 0) {
     selectedProductsList.innerHTML = `
-      <p class="selected-placeholder">No products selected yet.</p>
+      <p class="selected-placeholder">No product selected yet.</p>
     `;
     return;
   }
@@ -186,6 +189,8 @@ function openProductDetails(product) {
 /* Close modal and return focus to where user was */
 function closeProductDetails() {
   productDetailsModal.hidden = true;
+  productDetailsTitle.textContent = "Product Details";
+  productDetailsDescription.textContent = PRODUCT_DETAILS_PLACEHOLDER_TEXT;
 
   if (lastFocusedElement) {
     lastFocusedElement.focus();
@@ -235,6 +240,85 @@ function appendChatMessage(role, content) {
   chatWindow.innerHTML += `
     <p><strong>${speaker}:</strong> ${safeContent}</p>
   `;
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+/* Match a selected product to a routine step using simple beginner-friendly keywords */
+function matchesRoutineStep(product, stepName) {
+  const searchableText =
+    `${product.category} ${product.name} ${product.description}`.toLowerCase();
+
+  if (stepName === "Cleanser") {
+    return (
+      searchableText.includes("cleanser") || searchableText.includes("cleanse")
+    );
+  }
+
+  if (stepName === "Treatment") {
+    return (
+      searchableText.includes("treatment") ||
+      searchableText.includes("serum") ||
+      searchableText.includes("retinol") ||
+      searchableText.includes("acid")
+    );
+  }
+
+  if (stepName === "Moisturizer") {
+    return (
+      searchableText.includes("moisturizer") ||
+      searchableText.includes("hydrat") ||
+      searchableText.includes("cream") ||
+      searchableText.includes("lotion")
+    );
+  }
+
+  if (stepName === "SPF") {
+    return (
+      searchableText.includes("spf") ||
+      searchableText.includes("sunscreen") ||
+      searchableText.includes("sunblock") ||
+      searchableText.includes("suncare")
+    );
+  }
+
+  return false;
+}
+
+/* Build one routine line and avoid reusing the same product in multiple steps */
+function buildRoutineStepLine(stepOrder) {
+  const usedProductIds = [];
+
+  const stepLabels = stepOrder.map((stepName) => {
+    const matchingProduct = selectedProducts.find(
+      (product) =>
+        !usedProductIds.includes(product.id) &&
+        matchesRoutineStep(product, stepName),
+    );
+
+    if (!matchingProduct) {
+      return stepName;
+    }
+
+    usedProductIds.push(matchingProduct.id);
+    return `${stepName} (${matchingProduct.brand} - ${matchingProduct.name})`;
+  });
+
+  return stepLabels.join(" \u2192 ");
+}
+
+/* Show a structured morning/evening step sequence above the AI response */
+function appendRoutineStepOrderCard() {
+  const morningLine = buildRoutineStepLine(MORNING_STEP_ORDER);
+  const eveningLine = buildRoutineStepLine(EVENING_STEP_ORDER);
+
+  chatWindow.innerHTML += `
+    <div class="routine-steps-card" aria-label="Routine step order">
+      <p class="routine-steps-title"><strong>Routine Step Order</strong></p>
+      <p class="routine-steps-line"><strong>Morning:</strong> ${escapeHtml(morningLine)}</p>
+      <p class="routine-steps-line"><strong>Evening:</strong> ${escapeHtml(eveningLine)}</p>
+    </div>
+  `;
+
   chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
@@ -457,6 +541,7 @@ generateRoutineBtn.addEventListener("click", async () => {
   try {
     const routineResult = await generateRoutineFromSelectedProducts();
     chatWindow.innerHTML = "";
+    appendRoutineStepOrderCard();
     appendChatMessage("assistant", routineResult.text);
   } catch (error) {
     appendChatMessage("assistant", `Error: ${error.message}`);
