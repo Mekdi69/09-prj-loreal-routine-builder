@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>L'Oréal | Smart Routine &amp; Product Advisor</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&family=Open+Sans:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
     <link
@@ -89,13 +89,36 @@
       <div class="selected-products">
         <h2>Selected Products</h2>
         <p class="selected-helper">Your chosen items will appear here.</p>
+        <div class="selection-progress" aria-live="polite">
+          <div class="selection-progress-label-row">
+            <span class="selection-progress-label">Selection Progress</span>
+            <span id="selectionProgressText" class="selection-progress-text"
+              >0/5 selected</span
+            >
+          </div>
+          <div
+            class="selection-progress-track"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="5"
+            aria-valuenow="0"
+            aria-valuetext="0 out of 5 products selected"
+          >
+            <div
+              id="selectionProgressFill"
+              class="selection-progress-fill"
+            ></div>
+          </div>
+        </div>
         <div id="selectedProductsList"></div>
-        <button id="generateRoutine" class="generate-btn">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Routine
-        </button>
-        <button id="clearSelections" class="clear-btn" type="button">
-          Clear Selections
-        </button>
+        <div class="selection-actions">
+          <button id="generateRoutine" class="generate-btn">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Routine
+          </button>
+          <button id="clearSelections" class="clear-btn" type="button">
+            Clear Selections
+          </button>
+        </div>
       </div>
 
       <!------- Chat Area ------->

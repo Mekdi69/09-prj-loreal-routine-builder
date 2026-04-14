@@ -6,6 +6,8 @@ const productsContainer = document.getElementById("productsContainer");
 const chatForm = document.getElementById("chatForm");
 const chatWindow = document.getElementById("chatWindow");
 const selectedProductsList = document.getElementById("selectedProductsList");
+const selectionProgressText = document.getElementById("selectionProgressText");
+const selectionProgressFill = document.getElementById("selectionProgressFill");
 const generateRoutineBtn = document.getElementById("generateRoutine");
 const clearSelectionsBtn = document.getElementById("clearSelections");
 const userInput = document.getElementById("userInput");
@@ -26,8 +28,11 @@ let selectedCategory = "";
 let conversationMessages = [];
 const SELECTED_PRODUCTS_STORAGE_KEY = "lorealSelectedProducts";
 let lastFocusedElement = null;
+let modalCloseTimer = null;
 const MORNING_STEP_ORDER = ["Cleanser", "Treatment", "Moisturizer", "SPF"];
 const EVENING_STEP_ORDER = ["Cleanser", "Treatment", "Moisturizer"];
+const MODAL_ANIMATION_MS = 240;
+const TARGET_SELECTION_COUNT = 5;
 
 /* Show initial placeholder until user selects a category */
 productsContainer.innerHTML = `
@@ -101,7 +106,29 @@ function updateVisibleProducts() {
 }
 
 /* Update the Selected Products section whenever the selection changes */
+function updateSelectionProgress() {
+  const selectedCount = selectedProducts.length;
+  const clampedCount = Math.min(selectedCount, TARGET_SELECTION_COUNT);
+  const progressPercent = (clampedCount / TARGET_SELECTION_COUNT) * 100;
+
+  selectionProgressFill.style.width = `${progressPercent}%`;
+  selectionProgressText.textContent = `${selectedCount}/${TARGET_SELECTION_COUNT} selected`;
+
+  const progressTrack = selectionProgressFill.parentElement;
+
+  if (progressTrack) {
+    progressTrack.setAttribute("aria-valuemax", String(TARGET_SELECTION_COUNT));
+    progressTrack.setAttribute("aria-valuenow", String(clampedCount));
+    progressTrack.setAttribute(
+      "aria-valuetext",
+      `${selectedCount} out of ${TARGET_SELECTION_COUNT} products selected`,
+    );
+  }
+}
+
 function renderSelectedProducts() {
+  updateSelectionProgress();
+
   if (selectedProducts.length === 0) {
     selectedProductsList.innerHTML = `
       <p class="selected-placeholder">No product selected yet.</p>
@@ -203,13 +230,28 @@ function openProductDetails(product) {
   productDetailsTitle.textContent = product.name;
   productDetailsMeta.textContent = `${product.brand} | ${product.category}`;
   productDetailsDescription.textContent = product.description;
+
+  if (modalCloseTimer) {
+    clearTimeout(modalCloseTimer);
+    modalCloseTimer = null;
+  }
+
   productDetailsModal.hidden = false;
+  requestAnimationFrame(() => {
+    productDetailsModal.classList.add("is-open");
+  });
   closeProductDetailsBtn.focus();
 }
 
 /* Close modal and return focus to where user was */
 function closeProductDetails() {
-  productDetailsModal.hidden = true;
+  productDetailsModal.classList.remove("is-open");
+
+  modalCloseTimer = setTimeout(() => {
+    productDetailsModal.hidden = true;
+    modalCloseTimer = null;
+  }, MODAL_ANIMATION_MS);
+
   productDetailsImage.src = "";
   productDetailsImage.alt = "";
   productDetailsTitle.textContent = "";
@@ -219,6 +261,44 @@ function closeProductDetails() {
   if (lastFocusedElement) {
     lastFocusedElement.focus();
   }
+}
+
+/* Show a loading card while the Worker builds a routine */
+function showRoutineLoadingState() {
+  chatWindow.innerHTML = `
+    <div class="loading-state" role="status" aria-live="polite">
+      <span class="loading-spinner" aria-hidden="true"></span>
+      <span>Generating your routine...</span>
+    </div>
+  `;
+}
+
+/* Create a simple celebration burst after routine generation succeeds */
+function playConfettiBurst() {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+
+  const confettiLayer = document.createElement("div");
+  confettiLayer.className = "confetti-layer";
+  document.body.append(confettiLayer);
+
+  const colors = ["#e0b0ff", "#c79efc", "#ffe8b5", "#fff", "#ffb8d2"];
+
+  for (let i = 0; i < 28; i += 1) {
+    const piece = document.createElement("span");
+    piece.className = "confetti-piece";
+    piece.style.left = `${Math.random() * 100}%`;
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDelay = `${Math.random() * 0.18}s`;
+    piece.style.animationDuration = `${1 + Math.random() * 0.6}s`;
+    piece.style.transform = `translateY(-20px) rotate(${Math.random() * 360}deg)`;
+    confettiLayer.append(piece);
+  }
+
+  setTimeout(() => {
+    confettiLayer.remove();
+  }, 1800);
 }
 
 /* Return Cloudflare Worker endpoint (same-origin by default) */
@@ -559,14 +639,14 @@ generateRoutineBtn.addEventListener("click", async () => {
   }
 
   generateRoutineBtn.disabled = true;
-  chatWindow.innerHTML = "";
-  appendChatMessage("assistant", "Generating your routine...");
+  showRoutineLoadingState();
 
   try {
     const routineResult = await generateRoutineFromSelectedProducts();
     chatWindow.innerHTML = "";
     appendRoutineStepOrderCard();
     appendChatMessage("assistant", routineResult.text);
+    playConfettiBurst();
   } catch (error) {
     appendChatMessage("assistant", `Error: ${error.message}`);
   } finally {
