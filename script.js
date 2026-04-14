@@ -151,6 +151,19 @@ function isProductSelected(productId) {
   return selectedProducts.some((product) => product.id === productId);
 }
 
+/* Keep product card selected class in sync with selectedProducts state */
+function setProductCardSelectedState(productId, shouldSelect) {
+  const targetCard = productsContainer.querySelector(
+    `.product-card[data-product-id="${productId}"]`,
+  );
+
+  if (!targetCard) {
+    return;
+  }
+
+  targetCard.classList.toggle("selected", shouldSelect);
+}
+
 function toggleProductSelection(product) {
   const selectedIndex = selectedProducts.findIndex(
     (selectedProduct) => selectedProduct.id === product.id,
@@ -164,6 +177,8 @@ function toggleProductSelection(product) {
 
   renderSelectedProducts();
   saveSelectedProducts();
+
+  return selectedIndex < 0;
 }
 
 /* Save selected products to localStorage so choices persist on reload */
@@ -203,8 +218,8 @@ function clearSelections() {
   localStorage.removeItem(SELECTED_PRODUCTS_STORAGE_KEY);
   renderSelectedProducts();
 
-  const selectedCards = document.querySelectorAll(".product-card.selected");
-  selectedCards.forEach((card) => {
+  const allCards = productsContainer.querySelectorAll(".product-card");
+  allCards.forEach((card) => {
     card.classList.remove("selected");
   });
 }
@@ -568,8 +583,8 @@ productsContainer.addEventListener("click", (e) => {
     return;
   }
 
-  toggleProductSelection(product);
-  productCard.classList.toggle("selected");
+  const isSelected = toggleProductSelection(product);
+  setProductCardSelectedState(product.id, isSelected);
 });
 
 /* Support keyboard interaction for accessibility */
@@ -594,8 +609,8 @@ productsContainer.addEventListener("keydown", (e) => {
       return;
     }
 
-    toggleProductSelection(product);
-    productCard.classList.toggle("selected");
+    const isSelected = toggleProductSelection(product);
+    setProductCardSelectedState(product.id, isSelected);
   }
 });
 
